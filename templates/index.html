@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StackLab · Postfix Expression Evaluator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#home">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </span>
+        <span>
+          <strong>StackLab</strong>
+          <small>Postfix Expression Evaluator</small>
+        </span>
+      </a>
+      <nav class="nav" id="mainNav">
+        <a href="#home">Home</a>
+        <a href="#evaluator">Evaluator</a>
+        <a href="#algorithm">Algorithm</a>
+        <a href="#about">About</a>
+      </nav>
+      <div class="header-actions">
+        <button type="button" id="themeToggle" class="theme-btn">Light</button>
+        <button type="button" class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <section id="home" class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Data Structure Used: <strong>STACK</strong></p>
+      <h1>Postfix Expression Evaluator</h1>
+      <p class="hero-sub">Watch Last-In, First-Out evaluation: operands are pushed, operators pop two values, and the result is pushed back.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#evaluator">Start Evaluating</a>
+        <a class="btn btn-ghost" href="#algorithm">View Algorithm</a>
+      </div>
+    </div>
+    <aside class="hero-panel">
+      <p class="kicker">LIFO in one glance</p>
+      <ol class="hero-steps">
+        <li><span>PUSH</span> Operand enters the top</li>
+        <li><span>POP</span> Operator takes two values</li>
+        <li><span>PUSH</span> Result returns to the stack</li>
+      </ol>
+    </aside>
+  </section>
+
+  <main>
+    <section id="evaluator" class="section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Interactive lab</p>
+          <h2>Evaluator</h2>
+        </div>
+        <div class="status-pill" id="statusPill">
+          <span class="dot ready"></span>
+          <span id="statusText">Ready</span>
+        </div>
+      </div>
+
+      <div class="eval-grid">
+        <article class="card input-card">
+          <div class="card-head">
+            <h3>Enter Postfix Expression</h3>
+            <span class="chip">Space-separated tokens</span>
+          </div>
+          <label class="sr-only" for="expressionInput">Postfix expression</label>
+          <input id="expressionInput" type="text" placeholder="5 6 2 + *" autocomplete="off" />
+          <p class="hint">Integers, decimals, and operators <code>+ − * / % ^</code>. Example: <code>5 6 2 + *</code></p>
+          <div class="btn-row">
+            <button type="button" id="evaluateBtn" class="btn btn-primary">Evaluate</button>
+            <button type="button" id="clearBtn" class="btn btn-ghost">Clear</button>
+            <button type="button" id="exampleBtn" class="btn btn-ghost">Load example</button>
+          </div>
+          <div class="stat-row">
+            <div class="stat"><span>PUSH</span><strong id="pushCount">0</strong></div>
+            <div class="stat"><span>POP</span><strong id="popCount">0</strong></div>
+            <div class="stat"><span>Structure</span><strong>STACK</strong></div>
+          </div>
+        </article>
+
+        <article class="card stack-card">
+          <div class="card-head">
+            <h3>Stack Visualization</h3>
+            <span class="chip chip-accent" id="opBadge">IDLE</span>
+          </div>
+          <div class="token-line">
+            Current token: <code id="currentToken">—</code>
+            <span id="formulaLine" class="formula-line"></span>
+          </div>
+          <div class="stack-frame">
+            <p class="stack-label top-label">TOP · insertion &amp; deletion</p>
+            <div id="stackVisual" class="stack-visual" aria-live="polite">
+              <div class="stack-empty">
+                <strong>Stack is empty</strong>
+                <span>Evaluate an expression, then press Play to watch PUSH and POP.</span>
+              </div>
+            </div>
+            <p class="stack-label">BOTTOM</p>
+          </div>
+          <p class="ds-badge">LIFO · Last In, First Out</p>
+        </article>
+      </div>
+
+      <div class="card control-bar">
+        <div class="btn-row">
+          <button type="button" id="playBtn" class="btn btn-primary" disabled>Play</button>
+          <button type="button" id="pauseBtn" class="btn btn-ghost" disabled>Pause</button>
+          <button type="button" id="nextBtn" class="btn btn-ghost" disabled>Next Step</button>
+          <button type="button" id="resetBtn" class="btn btn-ghost" disabled>Reset</button>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-meta">
+            <span id="stepProgress">Step 0 / 0</span>
+            <span id="actionFlash">Waiting for an expression</span>
+          </div>
+          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        </div>
+      </div>
+
+      <article class="card error-card" id="errorCard" hidden>
+        <h3 class="error-title" id="errorTitle">Error</h3>
+        <p id="errorMessage"></p>
+      </article>
+
+      <article class="card table-card">
+        <div class="card-head">
+          <h3>Evaluation Steps</h3>
+          <span class="chip">Trace of every stack operation</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th>Token</th>
+                <th>Operation</th>
+                <th>Action</th>
+                <th>Stack (bottom → top)</th>
+              </tr>
+            </thead>
+            <tbody id="stepsBody">
+              <tr class="empty-row">
+                <td colspan="5">
+                  <strong>No steps yet</strong>
+                  Enter a postfix expression and click Evaluate to generate the trace.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card result-card" id="resultCard" hidden>
+        <p class="section-kicker">Success</p>
+        <h3>Evaluation Complete</h3>
+        <p class="result-expr">Expression: <code id="resultExpression"></code></p>
+        <p class="final-result">Final Result <strong id="finalResult"></strong></p>
+        <ul class="result-meta">
+          <li>Total Steps: <span id="totalSteps">0</span></li>
+          <li>Operations Performed: <span id="opsPerformed">0</span></li>
+          <li>Stack Status: Empty after evaluation</li>
+        </ul>
+      </article>
+    </section>
+
+    <section id="algorithm" class="section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Viva reference</p>
+          <h2>Algorithm</h2>
+        </div>
+        <button type="button" id="toggleAlgoBtn" class="btn btn-ghost">Show Algorithm</button>
+      </div>
+      <article class="card algo-card" id="algoBody" hidden>
+        <h3>Postfix Evaluation Using Stack</h3>
+        <ol class="algo-list">
+          <li>Create an empty stack.</li>
+          <li>Scan the postfix expression from left to right.</li>
+          <li>If the token is an operand, <strong>PUSH</strong> it onto the stack.</li>
+          <li>If the token is an operator:
+            <ul>
+              <li><strong>POP</strong> the top operand (right operand).</li>
+              <li><strong>POP</strong> the next operand (left operand).</li>
+              <li>Apply the operator.</li>
+              <li><strong>PUSH</strong> the result back onto the stack.</li>
+            </ul>
+          </li>
+          <li>The single remaining stack element is the final result.</li>
+        </ol>
+      </article>
+
+      <div class="complexity-grid">
+        <article class="card metric"><p class="metric-label">Time Complexity</p><p class="metric-value">O(n)</p></article>
+        <article class="card metric"><p class="metric-label">Space Complexity</p><p class="metric-value">O(n)</p></article>
+        <article class="card metric"><p class="metric-label">Data Structure</p><p class="metric-value">Stack</p></article>
+      </div>
+
+      <article class="card">
+        <h3>How It Works</h3>
+        <div class="pipeline">
+          <span>POSTFIX</span>
+          <span class="pipe-arrow">→</span>
+          <span>TOKENIZE</span>
+          <span class="pipe-arrow">→</span>
+          <span>STACK</span>
+          <span class="pipe-arrow">→</span>
+          <span>OPERATE</span>
+          <span class="pipe-arrow">→</span>
+          <span>RESULT</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Try these</p>
+          <h2>Example Expressions</h2>
+        </div>
+      </div>
+      <div class="example-grid">
+        <button type="button" class="card example-card" data-expression="2 3 +">
+          <span class="chip">Basic</span>
+          <h3>Example 1</h3>
+          <code>2 3 +</code>
+          <p>Result 5</p>
+        </button>
+        <button type="button" class="card example-card" data-expression="5 6 2 + *">
+          <span class="chip">Nested ops</span>
+          <h3>Example 2</h3>
+          <code>5 6 2 + *</code>
+          <p>Result 40</p>
+        </button>
+        <button type="button" class="card example-card" data-expression="10 2 8 * + 3 -">
+          <span class="chip">Multi-digit</span>
+          <h3>Example 3</h3>
+          <code>10 2 8 * + 3 -</code>
+          <p>Result 23</p>
+        </button>
+      </div>
+    </section>
+
+    <section id="about" class="section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Concepts</p>
+          <h2>About DSA</h2>
+        </div>
+      </div>
+      <div class="about-grid">
+        <article class="card">
+          <h3>What is a Stack?</h3>
+          <p>A linear LIFO structure. Insertion and deletion happen only at the top, which is why PUSH and POP are the only mutating operations.</p>
+        </article>
+        <article class="card">
+          <h3>What is Postfix?</h3>
+          <p>Operators follow their operands. Infix <code>5 + 6</code> becomes postfix <code>5 6 +</code>, so precedence is already encoded in token order.</p>
+        </article>
+        <article class="card">
+          <h3>Why a Stack?</h3>
+          <p>The two most recent operands sit at the top. An operator pops them in reverse (right first, then left), then pushes one result.</p>
+        </article>
+      </div>
+      <article class="card">
+        <h3>Real-world applications of Stack</h3>
+        <ul class="app-list">
+          <li>Expression evaluation</li>
+          <li>Function calls</li>
+          <li>Undo / Redo</li>
+          <li>Browser history</li>
+          <li>Syntax parsing</li>
+          <li>Backtracking</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>StackLab · College DSA Project · Postfix Evaluation using Stack</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
